@@ -1,0 +1,866 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Libro de Facturas</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Special+Elite&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+
+  :root{
+    --paper:#EEF4E9;
+    --paper-dark:#E2EBDB;
+    --paper-line:#B7CBAE;
+    --ink:#21301F;
+    --ink-soft:#57685280;
+    --ink-soft2:#4A5C46;
+    --stamp-blue:#2B4C6F;
+    --stamp-green:#2F6B3D;
+    --stamp-red:#9C3B2E;
+    --stamp-amber:#A8791E;
+    --gold:#B08D3F;
+    --card:#F7FAF4;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper);
+    background-image:
+      repeating-linear-gradient(var(--paper) 0 27px, var(--paper-line) 27px 28px);
+    color:var(--ink);
+    font-family:'IBM Plex Sans',sans-serif;
+    min-height:100vh;
+    padding:0 0 60px 0;
+  }
+
+  .wrap{max-width:1040px;margin:0 auto;padding:36px 24px 0;}
+
+  /* ---------- HEADER ---------- */
+  header{
+    display:flex;
+    align-items:flex-end;
+    justify-content:space-between;
+    gap:24px;
+    padding-bottom:18px;
+    border-bottom:3px double var(--ink);
+    flex-wrap:wrap;
+  }
+  .title-block h1{
+    font-family:'Special Elite',cursive;
+    font-size:34px;
+    margin:0 0 4px 0;
+    letter-spacing:0.5px;
+  }
+  .title-block p{
+    margin:0;
+    color:var(--ink-soft2);
+    font-size:13.5px;
+  }
+  .stamp-logo{
+    width:64px;height:64px;
+    border:3px solid var(--stamp-blue);
+    border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    transform:rotate(-8deg);
+    color:var(--stamp-blue);
+    font-family:'Special Elite',cursive;
+    font-size:11px;
+    text-align:center;
+    line-height:1.1;
+    flex-shrink:0;
+    opacity:0.85;
+  }
+  .title-row{display:flex;align-items:center;gap:14px;}
+
+  .stats{
+    display:flex;
+    gap:0;
+    margin-top:18px;
+    flex-wrap:wrap;
+  }
+  .stat{
+    flex:1;
+    min-width:140px;
+    padding:10px 18px;
+    border-right:1px dashed var(--paper-line);
+  }
+  .stat:last-child{border-right:none;}
+  .stat .num{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:22px;
+    font-weight:600;
+  }
+  .stat .lbl{
+    font-size:11.5px;
+    text-transform:uppercase;
+    letter-spacing:0.6px;
+    color:var(--ink-soft2);
+  }
+  .stat.pend .num{color:var(--stamp-red);}
+  .stat.pag .num{color:var(--stamp-green);}
+  .stat.rev .num{color:var(--stamp-amber);}
+  .stat.deuda .num{color:var(--gold);}
+
+  /* ---------- TOOLBAR ---------- */
+  .toolbar{
+    display:flex;
+    gap:10px;
+    margin:22px 0 14px;
+    flex-wrap:wrap;
+    align-items:center;
+  }
+  input[type=text], input[type=search], select, input[type=number], input[type=date], textarea{
+    font-family:'IBM Plex Sans',sans-serif;
+    background:var(--card);
+    border:1px solid var(--paper-line);
+    border-radius:3px;
+    padding:8px 10px;
+    font-size:13.5px;
+    color:var(--ink);
+  }
+  input:focus, select:focus, textarea:focus{
+    outline:2px solid var(--stamp-blue);
+    outline-offset:1px;
+  }
+  #search{flex:1;min-width:180px;}
+  .btn{
+    font-family:'IBM Plex Sans',sans-serif;
+    font-weight:600;
+    font-size:13px;
+    border:1.5px solid var(--ink);
+    background:transparent;
+    color:var(--ink);
+    padding:8px 16px;
+    border-radius:3px;
+    cursor:pointer;
+    transition:transform .12s ease, background .12s ease;
+  }
+  .btn:hover{background:var(--ink);color:var(--paper);}
+  .btn:active{transform:scale(0.97);}
+  .btn.primary{background:var(--stamp-blue);border-color:var(--stamp-blue);color:#fff;}
+  .btn.primary:hover{background:#1e3a58;}
+  .btn.small{padding:5px 10px;font-size:11.5px;border-width:1px;}
+  .btn.danger{border-color:var(--stamp-red);color:var(--stamp-red);}
+  .btn.danger:hover{background:var(--stamp-red);color:#fff;}
+  .btn.ghost{border-color:var(--paper-line);color:var(--ink-soft2);}
+  .btn.ghost:hover{background:var(--paper-line);color:var(--ink);}
+
+  /* ---------- LEDGER TABLE ---------- */
+  .ledger{
+    background:var(--card);
+    border:1px solid var(--paper-line);
+    border-radius:4px;
+    overflow:hidden;
+    box-shadow:0 1px 0 var(--paper-line);
+  }
+  .row-head{
+    display:grid;
+    grid-template-columns:1.6fr 1fr 1fr 1fr 1.1fr 1.4fr;
+    padding:10px 16px;
+    background:var(--paper-dark);
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:0.6px;
+    color:var(--ink-soft2);
+    border-bottom:2px solid var(--ink);
+    font-weight:600;
+  }
+  .entry{
+    border-bottom:1px solid var(--paper-line);
+  }
+  .entry:last-child{border-bottom:none;}
+  .entry-row{
+    display:grid;
+    grid-template-columns:1.6fr 1fr 1fr 1fr 1.1fr 1.4fr;
+    padding:13px 16px;
+    align-items:center;
+    gap:6px;
+    font-size:13.5px;
+  }
+  .entry:nth-child(even) .entry-row{background:#F1F6EE;}
+  .remitente{font-weight:600;}
+  .remitente .notas{display:block;font-weight:400;color:var(--ink-soft2);font-size:11.5px;margin-top:2px;}
+  .monto{font-family:'IBM Plex Mono',monospace;font-weight:600;}
+  .fecha{font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:var(--ink-soft2);}
+
+  .stamp{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    font-family:'Special Elite',cursive;
+    font-size:11px;
+    padding:4px 10px;
+    border:2px solid;
+    border-radius:4px;
+    letter-spacing:1px;
+    text-transform:uppercase;
+    transform:rotate(-4deg);
+    white-space:nowrap;
+  }
+  .stamp.pagada{color:var(--stamp-green);border-color:var(--stamp-green);}
+  .stamp.pendiente{color:var(--stamp-red);border-color:var(--stamp-red);}
+  .stamp.revisar{color:var(--stamp-amber);border-color:var(--stamp-amber);}
+  @keyframes stampDown{
+    0%{transform:rotate(-4deg) scale(2.4);opacity:0;}
+    60%{transform:rotate(-4deg) scale(0.92);opacity:1;}
+    100%{transform:rotate(-4deg) scale(1);opacity:1;}
+  }
+  .stamp.fresh{animation:stampDown .32s ease-out;}
+
+  .acciones{display:flex;gap:6px;flex-wrap:wrap;}
+
+  .subrow{
+    grid-column:1/-1;
+    background:var(--paper-dark);
+    border-top:1px dashed var(--paper-line);
+    padding:14px 18px;
+    margin-top:12px;
+  }
+  .subrow h4{margin:0 0 10px 0;font-family:'Special Elite',cursive;font-size:13px;font-weight:400;color:var(--stamp-blue);}
+  .field-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:10px;}
+  .field-grid label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:0.4px;color:var(--ink-soft2);margin-bottom:4px;}
+  .field-grid input, .field-grid textarea{width:100%;}
+  .match-note{font-size:12px;margin-top:6px;padding:8px 10px;border-radius:3px;}
+  .match-note.ok{background:#E4F1E5;color:var(--stamp-green);}
+  .match-note.bad{background:#F6E7E2;color:var(--stamp-amber);}
+  .pago-info{font-size:12px;color:var(--ink-soft2);line-height:1.5;}
+  .pago-info b{color:var(--ink);}
+
+  .empty{
+    padding:50px 20px;
+    text-align:center;
+    color:var(--ink-soft2);
+  }
+  .empty .stamp-big{
+    font-family:'Special Elite',cursive;
+    font-size:20px;
+    color:var(--paper-line);
+    border:3px solid var(--paper-line);
+    display:inline-block;
+    padding:10px 22px;
+    border-radius:6px;
+    transform:rotate(-5deg);
+    margin-bottom:14px;
+  }
+
+  /* ---------- GMAIL SECTION ---------- */
+  .gmail-box{
+    margin-top:28px;
+    border:1px dashed var(--paper-line);
+    border-radius:4px;
+    padding:18px 20px;
+    background:var(--card);
+  }
+  .gmail-box h3{
+    margin:0 0 6px 0;
+    font-family:'Special Elite',cursive;
+    font-size:15px;
+    font-weight:400;
+    display:flex;align-items:center;gap:8px;
+  }
+  .gmail-box p{font-size:12.5px;color:var(--ink-soft2);margin:0 0 12px 0;line-height:1.55;}
+  .gmail-actions{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-start;}
+  #importText{width:100%;min-height:70px;font-family:'IBM Plex Mono',monospace;font-size:12px;resize:vertical;}
+  .import-wrap{flex:1;min-width:260px;display:flex;flex-direction:column;gap:8px;}
+
+  .toast{
+    position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
+    background:var(--ink);color:var(--paper);
+    padding:10px 18px;border-radius:4px;
+    font-size:13px;
+    opacity:0;pointer-events:none;
+    transition:opacity .25s ease, transform .25s ease;
+    z-index:50;
+  }
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(-6px);}
+
+  @media (max-width:760px){
+    .row-head{display:none;}
+    .entry-row{grid-template-columns:1fr;gap:4px;padding:14px 16px;}
+    .entry-row > div::before{content:attr(data-label);display:block;font-size:10px;text-transform:uppercase;color:var(--ink-soft2);letter-spacing:0.5px;margin-bottom:2px;}
+  }
+
+  button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible{
+    outline:2px solid var(--stamp-blue);outline-offset:2px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="title-row">
+      <div class="stamp-logo">LIBRO<br>DE<br>FACTURAS</div>
+      <div class="title-block">
+        <h1>Libro de Facturas</h1>
+        <p>Registro y conciliación de pagos</p>
+      </div>
+    </div>
+  </header>
+
+  <div class="stats" id="stats"></div>
+
+  <div class="toolbar">
+    <input type="text" id="search" placeholder="Buscar por remitente...">
+    <select id="filterEstado">
+      <option value="todas">Todas</option>
+      <option value="pendiente">Pendientes</option>
+      <option value="pagada">Pagadas</option>
+      <option value="revisar">Por revisar</option>
+    </select>
+    <button class="btn primary" id="btnAdd">+ Agregar factura</button>
+    <button class="btn ghost" id="btnGoGmail">✉ Conectar Gmail</button>
+    <button class="btn ghost small" id="btnExport" title="Descargar tus facturas como archivo para llevarlas a otro computador">⭳ Respaldo</button>
+    <button class="btn ghost small" id="btnImportFile" title="Cargar un respaldo descargado en otro computador">⭱ Cargar respaldo</button>
+    <input type="file" id="fileInput" accept="application/json" style="display:none;">
+  </div>
+  <p style="font-size:11.5px;color:var(--ink-soft2);margin:-6px 0 0;">Los datos se guardan solo en este navegador y este computador. Usa "Respaldo" para llevarlos a otro equipo.</p>
+
+  <div id="ledgerContainer"></div>
+
+  <div class="gmail-box" id="gmailBox">
+    <h3>✉ Conectar Gmail</h3>
+    <p id="gmailStatus">Conecta tu cuenta de Gmail directamente para traer tus facturas. Necesitas un Client ID de Google (una sola vez) — usa "⚙ Configurar" si aún no lo tienes.</p>
+    <div class="gmail-actions">
+      <button class="btn primary small" id="btnConnectGmail">🔗 Conectar con Gmail</button>
+      <button class="btn ghost small" id="btnGmailSettings">⚙ Configurar Client ID</button>
+      <button class="btn ghost small" id="btnAskGmail">O pídeselo a Claude en el chat</button>
+    </div>
+
+    <div class="subrow" id="gmailSettingsPanel" style="display:none;">
+      <h4>Configuración de conexión (una sola vez)</h4>
+      <p style="font-size:12px;color:var(--ink-soft2);line-height:1.6;margin-top:0;">
+        1. Ve a <b>console.cloud.google.com</b> → crea un proyecto.<br>
+        2. Habilita la <b>Gmail API</b> (APIs y servicios → Biblioteca → busca "Gmail API" → Habilitar).<br>
+        3. Configura la <b>pantalla de consentimiento OAuth</b> (tipo Externo), agrega el permiso <code>gmail.readonly</code> y agrégate a ti mismo como <b>usuario de prueba</b>.<br>
+        4. Crea credenciales → <b>ID de cliente de OAuth</b> → tipo "Aplicación web". En "Orígenes de JavaScript autorizados" agrega la dirección desde donde abrirás esta app (ej: <code>http://localhost:8000</code> si la sirves localmente, o el dominio si la subes a GitHub Pages / Netlify).<br>
+        5. Copia el Client ID (termina en <code>.apps.googleusercontent.com</code>) y pégalo abajo.<br>
+        <b>Importante:</b> esto no funciona abriendo el archivo con doble clic (file://) — Google exige http/https. Sirve la carpeta con algo como <code>python3 -m http.server 8000</code> y abre <code>http://localhost:8000/libro-de-facturas.html</code>.
+      </p>
+      <div class="field-grid" style="grid-template-columns:1fr;">
+        <div><label>Client ID de Google</label><input type="text" id="clientIdInput" placeholder="xxxxxxxx.apps.googleusercontent.com"></div>
+      </div>
+      <div class="acciones">
+        <button class="btn primary small" id="btnSaveClientId">Guardar</button>
+        <button class="btn ghost small" id="btnCloseSettings">Cerrar</button>
+      </div>
+    </div>
+
+    <div id="gmailResults"></div>
+
+    <div class="import-wrap" style="margin-top:16px;">
+      <label style="font-size:11px;text-transform:uppercase;letter-spacing:0.4px;color:var(--ink-soft2);">Importar manualmente (una por línea: remitente, monto, fecha AAAA-MM-DD)</label>
+      <textarea id="importText" placeholder="Ej: Movistar, 24990, 2026-07-15&#10;Clínica Salud, 58000, 2026-07-20"></textarea>
+      <div><button class="btn small" id="btnImport">Importar líneas</button></div>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  const STORAGE_KEY = 'facturas';
+  let invoices = [];
+  let editingId = null;
+  let compareOpenId = null;
+  let addFormOpen = false;
+  let freshStampId = null;
+
+  const fmtMoney = n => new Intl.NumberFormat('es-CL',{style:'currency',currency:'CLP',maximumFractionDigits:0}).format(n||0);
+  const fmtDate = d => d ? new Date(d+'T00:00:00').toLocaleDateString('es-CL',{day:'2-digit',month:'short',year:'numeric'}) : '—';
+  const uid = () => 'f_' + Date.now() + '_' + Math.random().toString(36).slice(2,8);
+
+  function toast(msg){
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(toast._h);
+    toast._h = setTimeout(()=>t.classList.remove('show'), 2200);
+  }
+
+  async function loadData(){
+    try{
+      const raw = localStorage.getItem(STORAGE_KEY);
+      invoices = raw ? JSON.parse(raw) : [];
+    }catch(e){
+      invoices = [];
+    }
+    render();
+  }
+
+  async function saveData(){
+    try{
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(invoices));
+    }catch(e){
+      toast('Error guardando los datos en este navegador.');
+    }
+  }
+
+  function downloadBackup(){
+    const blob = new Blob([JSON.stringify(invoices, null, 2)], {type:'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const stamp = new Date().toISOString().slice(0,10);
+    a.href = url;
+    a.download = `libro-de-facturas-${stamp}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    toast('Respaldo descargado.');
+  }
+
+  function loadBackupFile(file){
+    const reader = new FileReader();
+    reader.onload = async (e)=>{
+      try{
+        const data = JSON.parse(e.target.result);
+        if(!Array.isArray(data)) throw new Error('formato inválido');
+        const valid = data.filter(f=>f && f.id && f.remitente && f.monto!==undefined);
+        invoices = valid;
+        await saveData();
+        render();
+        toast(`Respaldo cargado: ${valid.length} factura(s).`);
+      }catch(err){
+        toast('El archivo no tiene un formato válido.');
+      }
+    };
+    reader.readAsText(file);
+  }
+
+  function computeStats(){
+    const total = invoices.length;
+    const pagadas = invoices.filter(f=>f.estado==='pagada').length;
+    const pendientes = invoices.filter(f=>f.estado==='pendiente').length;
+    const revisar = invoices.filter(f=>f.estado==='revisar').length;
+    const deuda = invoices.filter(f=>f.estado!=='pagada').reduce((s,f)=>s+Number(f.monto||0),0);
+    return {total,pagadas,pendientes,revisar,deuda};
+  }
+
+  function renderStats(){
+    const s = computeStats();
+    document.getElementById('stats').innerHTML = `
+      <div class="stat"><div class="num">${s.total}</div><div class="lbl">Facturas</div></div>
+      <div class="stat pag"><div class="num">${s.pagadas}</div><div class="lbl">Pagadas</div></div>
+      <div class="stat pend"><div class="num">${s.pendientes}</div><div class="lbl">Pendientes</div></div>
+      <div class="stat rev"><div class="num">${s.revisar}</div><div class="lbl">Por revisar</div></div>
+      <div class="stat deuda"><div class="num">${fmtMoney(s.deuda)}</div><div class="lbl">Por pagar</div></div>
+    `;
+  }
+
+  function stampHtml(estado, id){
+    const map = {pagada:'Pagada', pendiente:'Pendiente', revisar:'Revisar'};
+    const fresh = freshStampId===id ? ' fresh' : '';
+    return `<span class="stamp ${estado}${fresh}">${map[estado]}</span>`;
+  }
+
+  function addFormHtml(existing){
+    const f = existing || {remitente:'',monto:'',fecha_emision:'',fecha_vencimiento:'',notas:''};
+    return `
+      <div class="subrow" id="addFormRow">
+        <h4>${existing ? 'Editar línea del libro' : 'Nueva línea del libro'}</h4>
+        <div class="field-grid">
+          <div><label>Remitente</label><input type="text" id="f_remitente" value="${f.remitente}" placeholder="Ej: Compañía Eléctrica"></div>
+          <div><label>Monto (CLP)</label><input type="number" id="f_monto" value="${f.monto}" placeholder="0"></div>
+          <div><label>Fecha de emisión</label><input type="date" id="f_emision" value="${f.fecha_emision}"></div>
+          <div><label>Fecha de vencimiento</label><input type="date" id="f_venc" value="${f.fecha_vencimiento}"></div>
+        </div>
+        <div class="field-grid" style="grid-template-columns:1fr;">
+          <div><label>Notas (opcional)</label><input type="text" id="f_notas" value="${f.notas||''}" placeholder="Referencia, N° de factura, etc."></div>
+        </div>
+        <div class="acciones">
+          <button class="btn primary small" id="f_save">${existing ? 'Guardar cambios' : 'Agregar al libro'}</button>
+          <button class="btn ghost small" id="f_cancel">Cancelar</button>
+        </div>
+      </div>
+    `;
+  }
+
+  function compareFormHtml(inv){
+    const p = inv.pago || {fecha_pago:'',monto_pagado:inv.monto,referencia:''};
+    return `
+      <div class="subrow">
+        <h4>Sellar como pagada — comparar con el pago</h4>
+        <div class="field-grid">
+          <div><label>Fecha de pago</label><input type="date" id="p_fecha" value="${p.fecha_pago}"></div>
+          <div><label>Monto pagado (CLP)</label><input type="number" id="p_monto" value="${p.monto_pagado}"></div>
+          <div><label>Referencia / N° operación</label><input type="text" id="p_ref" value="${p.referencia||''}"></div>
+        </div>
+        <div class="acciones">
+          <button class="btn primary small" id="p_confirm">Sellar pago</button>
+          <button class="btn ghost small" id="p_cancel">Cancelar</button>
+        </div>
+      </div>
+    `;
+  }
+
+  function paidInfoHtml(inv){
+    if(!inv.pago) return '';
+    return `
+      <div class="subrow">
+        <h4>Detalle del pago comparado</h4>
+        <div class="pago-info">
+          <b>Fecha de pago:</b> ${fmtDate(inv.pago.fecha_pago)}<br>
+          <b>Monto pagado:</b> ${fmtMoney(inv.pago.monto_pagado)} ${inv.estado==='revisar' ? '&nbsp;<span style="color:var(--stamp-amber)">(no coincide con la factura)</span>' : ''}<br>
+          <b>Referencia:</b> ${inv.pago.referencia || '—'}
+        </div>
+        <div class="acciones" style="margin-top:10px;">
+          <button class="btn ghost small" data-action="unmark" data-id="${inv.id}">Volver a pendiente</button>
+        </div>
+      </div>
+    `;
+  }
+
+  function render(){
+    renderStats();
+    const search = (document.getElementById('search').value || '').toLowerCase();
+    const filter = document.getElementById('filterEstado').value;
+    let list = invoices.filter(f=>{
+      const matchSearch = f.remitente.toLowerCase().includes(search);
+      const matchFilter = filter==='todas' || f.estado===filter;
+      return matchSearch && matchFilter;
+    }).sort((a,b)=> (b.fecha_emision||'').localeCompare(a.fecha_emision||''));
+
+    const container = document.getElementById('ledgerContainer');
+
+    if(invoices.length===0 && !addFormOpen){
+      container.innerHTML = `
+        <div class="ledger">
+          <div class="empty">
+            <div class="stamp-big">SIN REGISTROS</div>
+            <p>Aún no hay facturas registradas.<br>Agrega la primera línea del libro.</p>
+          </div>
+        </div>`;
+      return;
+    }
+
+    let rows = '';
+    if(addFormOpen && editingId===null){
+      rows += `<div class="entry">${addFormHtml(null)}</div>`;
+    }
+
+    if(list.length===0 && invoices.length>0){
+      rows += `<div class="entry"><div class="empty">No hay facturas que coincidan con la búsqueda o filtro.</div></div>`;
+    }
+
+    list.forEach(inv=>{
+      if(editingId===inv.id){
+        rows += `<div class="entry">${addFormHtml(inv)}</div>`;
+        return;
+      }
+      rows += `
+        <div class="entry">
+          <div class="entry-row">
+            <div class="remitente" data-label="Remitente">${escapeHtml(inv.remitente)}${inv.notas ? `<span class="notas">${escapeHtml(inv.notas)}</span>` : ''}</div>
+            <div class="monto" data-label="Monto">${fmtMoney(inv.monto)}</div>
+            <div class="fecha" data-label="Emitida">${fmtDate(inv.fecha_emision)}</div>
+            <div class="fecha" data-label="Vence">${fmtDate(inv.fecha_vencimiento)}</div>
+            <div data-label="Estado">${stampHtml(inv.estado, inv.id)}</div>
+            <div class="acciones" data-label="Acciones">
+              ${inv.estado==='pendiente' ? `<button class="btn small" data-action="pay" data-id="${inv.id}">Marcar pagada</button>` : ''}
+              ${inv.estado!=='pendiente' ? `<button class="btn small ghost" data-action="viewpay" data-id="${inv.id}">Ver comparación</button>` : ''}
+              <button class="btn small ghost" data-action="edit" data-id="${inv.id}">Editar</button>
+              <button class="btn small danger" data-action="delete" data-id="${inv.id}">Eliminar</button>
+            </div>
+          </div>
+          ${compareOpenId===inv.id ? compareFormHtml(inv) : ''}
+          ${(compareOpenId==='view_'+inv.id) ? paidInfoHtml(inv) : ''}
+        </div>
+      `;
+    });
+
+    container.innerHTML = `
+      <div class="ledger">
+        <div class="row-head">
+          <div>Remitente</div><div>Monto</div><div>Emitida</div><div>Vence</div><div>Estado</div><div>Acciones</div>
+        </div>
+        ${rows}
+      </div>
+    `;
+    freshStampId = null;
+  }
+
+  function escapeHtml(s){
+    const d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
+  }
+
+  // ---------- Actions ----------
+  document.getElementById('btnAdd').addEventListener('click', ()=>{
+    editingId = null;
+    addFormOpen = true;
+    render();
+    setTimeout(()=>document.getElementById('f_remitente')?.focus(), 50);
+  });
+
+  document.getElementById('search').addEventListener('input', render);
+  document.getElementById('filterEstado').addEventListener('change', render);
+
+  document.getElementById('ledgerContainer').addEventListener('click', async (e)=>{
+    const t = e.target;
+    if(t.id==='f_save'){
+      const remitente = document.getElementById('f_remitente').value.trim();
+      const monto = parseFloat(document.getElementById('f_monto').value) || 0;
+      const fecha_emision = document.getElementById('f_emision').value;
+      const fecha_vencimiento = document.getElementById('f_venc').value;
+      const notas = document.getElementById('f_notas').value.trim();
+      if(!remitente || !monto || !fecha_emision){
+        toast('Completa remitente, monto y fecha de emisión.');
+        return;
+      }
+      if(editingId){
+        const inv = invoices.find(i=>i.id===editingId);
+        Object.assign(inv, {remitente,monto,fecha_emision,fecha_vencimiento,notas});
+      }else{
+        invoices.push({id:uid(),remitente,monto,fecha_emision,fecha_vencimiento,notas,estado:'pendiente',pago:null});
+      }
+      editingId = null; addFormOpen = false;
+      await saveData();
+      render();
+      toast('Factura guardada.');
+      return;
+    }
+    if(t.id==='f_cancel'){
+      editingId = null; addFormOpen = false; render(); return;
+    }
+    if(t.dataset.action==='edit'){
+      editingId = t.dataset.id; addFormOpen = false; compareOpenId = null; render(); return;
+    }
+    if(t.dataset.action==='delete'){
+      if(confirm('¿Eliminar esta factura del libro?')){
+        invoices = invoices.filter(i=>i.id!==t.dataset.id);
+        await saveData(); render(); toast('Factura eliminada.');
+      }
+      return;
+    }
+    if(t.dataset.action==='pay'){
+      compareOpenId = t.dataset.id; editingId=null; addFormOpen=false; render(); return;
+    }
+    if(t.dataset.action==='viewpay'){
+      compareOpenId = compareOpenId==='view_'+t.dataset.id ? null : 'view_'+t.dataset.id;
+      render(); return;
+    }
+    if(t.dataset.action==='unmark'){
+      const inv = invoices.find(i=>i.id===t.dataset.id);
+      inv.estado='pendiente'; inv.pago=null;
+      compareOpenId=null;
+      await saveData(); render(); toast('Factura vuelta a pendiente.');
+      return;
+    }
+    if(t.id==='p_confirm'){
+      const inv = invoices.find(i=>i.id===compareOpenId);
+      const fecha_pago = document.getElementById('p_fecha').value;
+      const monto_pagado = parseFloat(document.getElementById('p_monto').value) || 0;
+      const referencia = document.getElementById('p_ref').value.trim();
+      if(!fecha_pago || !monto_pagado){
+        toast('Completa fecha y monto del pago.');
+        return;
+      }
+      const coincide = Math.abs(monto_pagado - Number(inv.monto)) < 1;
+      inv.pago = {fecha_pago, monto_pagado, referencia};
+      inv.estado = coincide ? 'pagada' : 'revisar';
+      freshStampId = inv.id;
+      compareOpenId = null;
+      await saveData(); render();
+      toast(coincide ? 'Factura sellada como pagada.' : 'Pago registrado, pero el monto no coincide.');
+      return;
+    }
+    if(t.id==='p_cancel'){
+      compareOpenId = null; render(); return;
+    }
+  });
+
+  // ---------- Conexión real con Gmail (Google Identity Services) ----------
+  const GMAIL_SCOPE = 'https://www.googleapis.com/auth/gmail.readonly';
+  let tokenClient = null;
+  let accessToken = null;
+  let gmailFound = [];
+
+  function getClientId(){ return localStorage.getItem('gmail_client_id') || ''; }
+
+  function initTokenClient(){
+    const clientId = getClientId();
+    if(!clientId || typeof google === 'undefined' || !google.accounts) return false;
+    tokenClient = google.accounts.oauth2.initTokenClient({
+      client_id: clientId,
+      scope: GMAIL_SCOPE,
+      callback: (resp)=>{
+        if(resp.error){
+          toast('No se pudo autorizar: ' + resp.error);
+          return;
+        }
+        accessToken = resp.access_token;
+        document.getElementById('gmailStatus').textContent = '✅ Conectado a Gmail. Buscando facturas...';
+        fetchGmailInvoices();
+      }
+    });
+    return true;
+  }
+
+  document.getElementById('btnConnectGmail').addEventListener('click', ()=>{
+    const clientId = getClientId();
+    if(!clientId){
+      toast('Primero configura tu Client ID de Google.');
+      document.getElementById('gmailSettingsPanel').style.display = 'block';
+      return;
+    }
+    if(!tokenClient && !initTokenClient()){
+      toast('No se pudo cargar la librería de Google. Revisa tu conexión a internet.');
+      return;
+    }
+    tokenClient.requestAccessToken({prompt: accessToken ? '' : 'consent'});
+  });
+
+  document.getElementById('btnGmailSettings').addEventListener('click', ()=>{
+    const panel = document.getElementById('gmailSettingsPanel');
+    panel.style.display = panel.style.display==='none' ? 'block' : 'none';
+    document.getElementById('clientIdInput').value = getClientId();
+  });
+  document.getElementById('btnCloseSettings').addEventListener('click', ()=>{
+    document.getElementById('gmailSettingsPanel').style.display = 'none';
+  });
+  document.getElementById('btnSaveClientId').addEventListener('click', ()=>{
+    const val = document.getElementById('clientIdInput').value.trim();
+    if(!val.endsWith('.apps.googleusercontent.com')){
+      toast('Ese no parece un Client ID válido de Google.');
+      return;
+    }
+    localStorage.setItem('gmail_client_id', val);
+    tokenClient = null;
+    document.getElementById('gmailSettingsPanel').style.display = 'none';
+    toast('Client ID guardado.');
+  });
+
+  async function fetchGmailInvoices(){
+    try{
+      const q = encodeURIComponent('(subject:factura OR subject:boleta OR subject:recibo OR subject:invoice) -in:sent');
+      const listRes = await fetch(`https://gmail.googleapis.com/gmail/v1/users/me/messages?q=${q}&maxResults=20`, {
+        headers:{ Authorization: `Bearer ${accessToken}` }
+      });
+      const listData = await listRes.json();
+      if(!listData.messages || listData.messages.length===0){
+        document.getElementById('gmailStatus').textContent = 'Conectado a Gmail — no se encontraron correos de facturas.';
+        return;
+      }
+      gmailFound = [];
+      for(const m of listData.messages){
+        const msgRes = await fetch(`https://gmail.googleapis.com/gmail/v1/users/me/messages/${m.id}?format=metadata&metadataHeaders=From&metadataHeaders=Subject&metadataHeaders=Date`, {
+          headers:{ Authorization: `Bearer ${accessToken}` }
+        });
+        const msg = await msgRes.json();
+        const headers = {};
+        (msg.payload && msg.payload.headers || []).forEach(h=>headers[h.name]=h.value);
+        const snippet = msg.snippet || '';
+        const montoMatch = snippet.match(/\$\s?[\d.,]+/);
+        const monto = montoMatch ? parseFloat(montoMatch[0].replace(/[^\d]/g,'')) : '';
+        const fromRaw = headers.From || '';
+        const remitente = fromRaw.replace(/<.*?>/,'').replace(/"/g,'').trim() || fromRaw;
+        const fecha = headers.Date ? new Date(headers.Date).toISOString().slice(0,10) : '';
+        gmailFound.push({id:m.id, remitente, monto, fecha, asunto: headers.Subject || '', snippet});
+      }
+      document.getElementById('gmailStatus').textContent = `✅ Conectado a Gmail — ${gmailFound.length} correo(s) encontrados. Revisa los montos antes de importar.`;
+      renderGmailResults();
+    }catch(e){
+      document.getElementById('gmailStatus').textContent = 'Error consultando Gmail: ' + e.message;
+    }
+  }
+
+  function renderGmailResults(){
+    if(gmailFound.length===0){ document.getElementById('gmailResults').innerHTML=''; return; }
+    const rows = gmailFound.map((f,i)=>`
+      <div class="field-grid" style="grid-template-columns:24px 1.4fr 1fr 1fr 1.6fr;align-items:end;">
+        <div><input type="checkbox" class="gmail-check" data-i="${i}" checked style="margin-top:22px;"></div>
+        <div><label>Remitente</label><input type="text" data-i="${i}" data-f="remitente" value="${escapeHtml(f.remitente)}"></div>
+        <div><label>Monto (revisa)</label><input type="number" data-i="${i}" data-f="monto" value="${f.monto}"></div>
+        <div><label>Fecha</label><input type="date" data-i="${i}" data-f="fecha" value="${f.fecha}"></div>
+        <div><label>Asunto</label><input type="text" value="${escapeHtml(f.asunto)}" disabled></div>
+      </div>
+    `).join('');
+    document.getElementById('gmailResults').innerHTML = `
+      <div class="subrow">
+        <h4>Facturas encontradas — marca las que quieras importar</h4>
+        ${rows}
+        <div class="acciones" style="margin-top:10px;">
+          <button class="btn primary small" id="btnImportGmail">Importar seleccionadas</button>
+        </div>
+      </div>
+    `;
+    document.getElementById('gmailResults').querySelectorAll('input[data-f]').forEach(inp=>{
+      inp.addEventListener('input', ()=>{
+        gmailFound[inp.dataset.i][inp.dataset.f] = inp.dataset.f==='monto' ? parseFloat(inp.value)||0 : inp.value;
+      });
+    });
+    document.getElementById('btnImportGmail').addEventListener('click', async ()=>{
+      const checks = document.querySelectorAll('.gmail-check:checked');
+      let added = 0;
+      checks.forEach(c=>{
+        const f = gmailFound[c.dataset.i];
+        if(!f.remitente || !f.monto || !f.fecha) return;
+        invoices.push({id:uid(), remitente:f.remitente, monto:f.monto, fecha_emision:f.fecha, fecha_vencimiento:'', notas:'Importada de Gmail', estado:'pendiente', pago:null});
+        added++;
+      });
+      if(added>0){
+        await saveData();
+        gmailFound = [];
+        document.getElementById('gmailResults').innerHTML = '';
+        render();
+        toast(`${added} factura(s) importada(s) desde Gmail.`);
+      }else{
+        toast('Selecciona al menos una factura con remitente, monto y fecha completos.');
+      }
+    });
+  }
+
+  document.getElementById('btnExport').addEventListener('click', downloadBackup);
+  document.getElementById('btnImportFile').addEventListener('click', ()=>document.getElementById('fileInput').click());
+  document.getElementById('fileInput').addEventListener('change', (e)=>{
+    if(e.target.files && e.target.files[0]) loadBackupFile(e.target.files[0]);
+    e.target.value = '';
+  });
+
+  document.getElementById('btnGoGmail').addEventListener('click', ()=>{
+    document.getElementById('gmailBox').scrollIntoView({behavior:'smooth', block:'start'});
+  });
+
+  document.getElementById('btnAskGmail').addEventListener('click', ()=>{
+    if(typeof sendPrompt === 'function'){
+      sendPrompt('Busca en mi Gmail correos de facturas y tráeme, para cada una, el remitente, el monto y la fecha de emisión, listos en formato "remitente, monto, fecha AAAA-MM-DD" para pegarlos en el Libro de Facturas.');
+    }else{
+      toast('Pídele directamente a Claude en el chat que revise tu Gmail.');
+    }
+  });
+
+  document.getElementById('btnImport').addEventListener('click', async ()=>{
+    const raw = document.getElementById('importText').value.trim();
+    if(!raw){ toast('Pega al menos una línea para importar.'); return; }
+    const lines = raw.split('\n').map(l=>l.trim()).filter(Boolean);
+    let added = 0;
+    lines.forEach(line=>{
+      const parts = line.split(',').map(p=>p.trim());
+      if(parts.length<3) return;
+      const [remitente, montoStr, fecha] = parts;
+      const monto = parseFloat(montoStr.replace(/[^0-9.]/g,''));
+      if(!remitente || !monto || !fecha) return;
+      invoices.push({id:uid(),remitente,monto,fecha_emision:fecha,fecha_vencimiento:'',notas:'Importada',estado:'pendiente',pago:null});
+      added++;
+    });
+    if(added>0){
+      await saveData();
+      document.getElementById('importText').value = '';
+      render();
+      toast(`${added} factura(s) importada(s).`);
+    }else{
+      toast('No se reconoció ninguna línea válida.');
+    }
+  });
+
+  loadData();
+})();
+</script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+</body>
+</html>
